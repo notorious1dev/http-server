@@ -21,5 +21,8 @@ ar rcs ./lib/libsocket_utilities.a ./obj/libsocket_utilities.o
 gcc -c ./src/dummy_parser.c -I./header -lm -o ./obj/libdummy_parser.o
 ar rcs ./lib/libdummy_parser.a ./obj/libdummy_parser.o
 
-gcc ./src/server.c -I./header -L./lib -lsocket_utilities -ldummy_parser -lm -o ./server
+gcc -c ./src/file_utilities.c -I./header -lm -o ./obj/libfile_utilities.o
+ar rcs ./lib/libfile_utilities.a ./obj/libfile_utilities.o
+
+gcc ./src/server.c -I./header -L./lib -lsocket_utilities -ldummy_parser -lfile_utilities -lm -o ./server
 ./server

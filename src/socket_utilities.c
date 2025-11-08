@@ -57,8 +57,6 @@ int* initialize_server(struct sockaddr_in* socket_data) {
     int* server_fd_return = malloc(sizeof(int));
     *server_fd_return = server_fd;
 
-    printf("Server is listening on port: %d\n", ntohs(socket_data->sin_port));
-
     return server_fd_return;
 
     clean_up:
