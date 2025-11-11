@@ -1,6 +1,7 @@
 #ifndef DUMMY_PARSER
 #define DUMMY_PARSER
 #include <stddef.h>
+#include <sys/types.h>
 
 typedef enum {
     OK = 200,
@@ -9,11 +10,13 @@ typedef enum {
 } HttpStatus;
 
 typedef struct {
+    HttpStatus status;
     char *method;
     char *path;
 
 } HttpRequest;
 
-HttpRequest http_parse_request(char* buffer);
+static ssize_t find_char(char* buffer, ssize_t offset, ssize_t length, char c);
+HttpRequest *http_parse_request(char* buffer, size_t length);
 
 #endif
