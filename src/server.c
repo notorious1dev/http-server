@@ -77,11 +77,14 @@ int main()
 }
 
 //----------FUNCTIONS IMPLEMENTATION-----------//
-//Currently it always responses with 200 OK Header
 void handle_request(HttpRequest *request, int client_fd)
 {
     if (strcmp("/", request->path) == 0)
-        http_send_file(*request, client_fd, "./pages/index.html");
+        http_send_file(request, client_fd, "./pages/index.html");
     else
-        http_send_file(*request, client_fd, "./pages/404.html");
+    {
+        request->status = NOT_FOUND;
+        http_send_file(request, client_fd, "./pages/404.html");
+    } 
 }
+

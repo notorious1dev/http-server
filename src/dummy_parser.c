@@ -2,13 +2,26 @@
 #include <dummy_parser.h>
 #include <stdlib.h>
 
+char * status_enum_to_string(HttpStatus status) {
+    switch (status)
+    {
+    case OK:
+        return "OK";
+    
+    case NOT_FOUND:
+        return "NOT FOUND";
+
+    case NOT_IMPLEMENTED:
+        return "NOT IMPLEMENTED";
+    }
+}
 
 static ssize_t find_char(char* buffer, ssize_t offset, ssize_t length, char c)
 {
     if (buffer == NULL)
         return (ssize_t)-1;
 
-    if (offset >= length)
+    if (offset >= length || offset < 0)
         return (ssize_t)-1;
 
     for (ssize_t i = offset; i < length; i ++)
@@ -45,6 +58,7 @@ HttpRequest* http_parse_request(char* buffer, size_t length) {
     pt[space_after_path - space_after_method - 1] = '\0';
     request->path = pt;
 
+    request->status = OK;
     return request;
 
     fail:
