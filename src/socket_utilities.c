@@ -66,4 +66,4 @@ int initialize_server(struct sockaddr_in* socket_data) {
     close(server_fd);
     exit(EXIT_FAILURE);
    
-};
+}

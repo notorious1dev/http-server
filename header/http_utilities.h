@@ -1,5 +1,5 @@
-#ifndef DUMMY_PARSER
-#define DUMMY_PARSER
+#ifndef HTTP_UTILITIES 
+#define HTTP_UTILITIES
 #include <stddef.h>
 #include <sys/types.h>
 
@@ -17,7 +17,7 @@ typedef struct {
 } HttpRequest;
 
 //helping functions
-char * status_enum_to_string(HttpStatus status);
+char *status_enum_to_string(HttpStatus status);
 static ssize_t find_char(char* buffer, ssize_t offset, ssize_t length, char c);
 
 HttpRequest *http_parse_request(char* buffer, size_t length);

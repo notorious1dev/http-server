@@ -1,5 +1,5 @@
 #include <string.h>
-#include <dummy_parser.h>
+#include <http_utilities.h>
 #include <stdlib.h>
 
 char * status_enum_to_string(HttpStatus status) {

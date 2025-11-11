@@ -11,12 +11,16 @@
 
 #include "socket_utilities.h"
 #include "file_utilities.h"
-#include "dummy_parser.h"
+#include "http_utilities.h"
 
 #define IP "127.0.0.1"
 #define PORT 8080
-#define BUFFOR_SIZE 1024
-char buffer[BUFFOR_SIZE];
+#define BUFFER_SIZE 1024
+#define REQUEST_FILE_BUFFER 1024
+
+#define PAGES_DIR "./pages"
+
+char buffer[BUFFER_SIZE];
 
 //-------------FUNCTIONS DECLARATION---------------//
 void handle_request(HttpRequest *request, int client_fd);
@@ -26,7 +30,7 @@ int main()
     //Initialization
     struct sockaddr_in *server_socket = sockaddr_server_constructor(PORT);
     int server_fd = initialize_server(server_socket);
-
+    
     printf("Server: Listening on port: %d\n", PORT);
 
     while (1)
@@ -46,7 +50,7 @@ int main()
         printf("Server: new connection from: %s:%d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
         //Reading
-        ssize_t bytes_read = read(client_fd, buffer, BUFFOR_SIZE);
+        ssize_t bytes_read = read(client_fd, buffer, BUFFER_SIZE);
         if (bytes_read <= 0)
         {
             printf("Server: read error or empty request.\n");
@@ -55,7 +59,7 @@ int main()
         }
 
         //Handling
-        HttpRequest *parsed_http = http_parse_request(buffer, BUFFOR_SIZE);
+        HttpRequest *parsed_http = http_parse_request(buffer, BUFFER_SIZE);
         if (parsed_http == NULL) {
             printf("ERROR: http request was not parsed\n");
             goto close;
@@ -79,12 +83,30 @@ int main()
 //----------FUNCTIONS IMPLEMENTATION-----------//
 void handle_request(HttpRequest *request, int client_fd)
 {
+    if (strcmp("GET", request->method) != 0) {
+        request->status = NOT_IMPLEMENTED;
+        http_send_file(request, client_fd, "./pages/501.html");
+        return;
+    }
+
     if (strcmp("/", request->path) == 0)
-        http_send_file(request, client_fd, "./pages/index.html");
-    else
     {
-        request->status = NOT_FOUND;
-        http_send_file(request, client_fd, "./pages/404.html");
-    } 
+        http_send_file(request, client_fd, "./pages/index.html");
+        return;
+    }
+
+    char filepath[REQUEST_FILE_BUFFER] = {0};
+    int find_file_status = find_file(request, PAGES_DIR, filepath, REQUEST_FILE_BUFFER);
+
+    
+    if (find_file_status) 
+    {
+        request->status = OK;
+        http_send_file(request, client_fd, filepath);
+        return;
+    }
+
+    request->status = NOT_FOUND;
+    http_send_file(request, client_fd, "./pages/404.html");
 }
 
