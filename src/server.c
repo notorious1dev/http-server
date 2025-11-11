@@ -13,7 +13,7 @@
 #define IP "127.0.0.1"
 #define PORT 8080
 #define BUFFOR_SIZE 1024
-char buffor[BUFFOR_SIZE];
+char buffer[BUFFOR_SIZE];
 
 //-------------FUNCTIONS DECLARATION---------------//
 void handle_request(HttpRequest request, int client_fd);
@@ -22,7 +22,7 @@ int main()
 {
     //Initialization
     struct sockaddr_in *server_socket = sockaddr_server_constructor(PORT);
-    int *server_fd = initialize_server(server_socket);
+    int server_fd = initialize_server(server_socket);
 
     printf("Server: Listening on port: %d\n", PORT);
 
@@ -31,11 +31,11 @@ int main()
         //Listening
         struct sockaddr_in client;
         socklen_t lenght = sizeof(client);
-        int client_fd = accept(*server_fd, (struct sockaddr *)&client, &lenght);
+        int client_fd = accept(server_fd, (struct sockaddr *)&client, &lenght);
 
         if (client_fd < 0)
         {
-            close(*server_fd);
+            close(server_fd);
             printf("Server: error with handling connection.\n");
             break;
         }
@@ -43,7 +43,7 @@ int main()
         printf("Server: new connection from: %s:%d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
         //Reading
-        ssize_t bytes_read = read(client_fd, buffor, BUFFOR_SIZE);
+        ssize_t bytes_read = read(client_fd, buffer, BUFFOR_SIZE);
         if (bytes_read <= 0)
         {
             printf("Server: read error or empty request.\n");
@@ -52,7 +52,7 @@ int main()
         }
 
         //Handling
-        HttpRequest parsed_http = http_parse_request(buffor, BUFFOR_SIZE);
+        HttpRequest parsed_http = http_parse_request(buffer);
         printf("PATH:%s + METHOD:%s\n", parsed_http.path, parsed_http.method);
         handle_request(parsed_http, client_fd);
 
@@ -64,7 +64,7 @@ int main()
         close(client_fd);
     }
 
-    close(*server_fd);
+    close(server_fd);
     return 0;
 }
 

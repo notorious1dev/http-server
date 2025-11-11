@@ -36,10 +36,16 @@ struct sockaddr_in* sockaddr_server_constructor(int port) {
     return return_socket;;
 }
 
-int* initialize_server(struct sockaddr_in* socket_data) {
+int initialize_server(struct sockaddr_in* socket_data) {
     int server_fd = socket(socket_data->sin_family, SOCK_STREAM, 0);
     if (server_fd < 0) {
         printf("Error: Server socket was not initialized\n");
+        goto clean_up;
+    }
+
+    int opt_value = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_value, sizeof(opt_value)) == -1) {
+        printf("Error: server options were not setted\n");
         goto clean_up;
     }
 
@@ -54,10 +60,7 @@ int* initialize_server(struct sockaddr_in* socket_data) {
         goto clean_up;
     }
 
-    int* server_fd_return = malloc(sizeof(int));
-    *server_fd_return = server_fd;
-
-    return server_fd_return;
+    return server_fd;
 
     clean_up:
     close(server_fd);

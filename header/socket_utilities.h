@@ -10,6 +10,6 @@ void* sockaddrIP4_constructor(char* ip, int port);
 
 struct sockaddr_in* sockaddr_server_constructor(int port);
 
-int* initialize_server(struct sockaddr_in* socket_data);
+int initialize_server(struct sockaddr_in* socket_data);
 
 #endif

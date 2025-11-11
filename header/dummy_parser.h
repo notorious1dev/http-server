@@ -14,6 +14,6 @@ typedef struct {
 
 } HttpRequest;
 
-HttpRequest http_parse_request(char* buffor, size_t lenght);
+HttpRequest http_parse_request(char* buffer);
 
 #endif
