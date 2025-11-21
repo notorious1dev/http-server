@@ -1,4 +1,4 @@
-# Simple HTTP Server (Not Completed)
+# Simple HTTP Server with multithreading  (Not Completed)
 
 This is a simple HTTP/1.1 server written in C. It is not fully completed and is primarily intended as a learning project. The goal is to understand the fundamentals of how HTTP servers work, including:
 
@@ -13,6 +13,7 @@ This is a simple HTTP/1.1 server written in C. It is not fully completed and is 
 ## Features
 
 - Handles **basic HTTP GET requests**.
+- Multithreading server.
 - Serves static files.
 - Dummy HTTP parser.
 - Returns standard HTTP status codes:
