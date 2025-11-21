@@ -22,7 +22,7 @@ This is a simple HTTP/1.1 server written in C. It is not fully completed and is 
 - Supports nested directories when searching for files.
 
 ## To Do
-- [ ] Add multithreading using POSIX threads
+- [x] Add multithreading using POSIX threads
 - [ ] Improve error handling and implement security enhancements
 - [ ] Prevent directory traversal attacks
 
@@ -39,6 +39,8 @@ This is a simple HTTP/1.1 server written in C. It is not fully completed and is 
 - `socket_utilities.c` - Socket initialization and helpers
 - `file_utilities.c` - File searching utilities
 - `http_utilities.c` - HTTP parsing and response helpers
+- `queue_t.h` - header-only implementation of queue for threadpool
+- `threadpool_t.h` - header-only implementation of threadpool.
 - `pages/` - Directory for HTML pages (index.html, 404.html, 501.html)
 
 ## How to Run
