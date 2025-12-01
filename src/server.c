@@ -35,9 +35,7 @@ int main()
 {
     struct sockaddr_in *server_socket = sockaddr_server_constructor(PORT);
     int server_fd = initialize_server(server_socket);
-    
     threadpool_t * threadpool = threadpool_init(THREADS_AMOUNT);
-    
     printf("Server: Listening on port: %d\n", PORT);
 
     while (1)
@@ -53,29 +51,9 @@ int main()
         }
         printf("Server: new connection from: %s:%d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
-        
-        char *http_request_msg = (char*)malloc(sizeof(char) * BUFFER_SIZE);
-        if (!http_request_msg) {
-            close(client_fd);
-            continue;
-        }
-
-        ssize_t bytes_read = read(client_fd, http_request_msg, BUFFER_SIZE - 1);
-        
-        if (bytes_read <= 0)
-        {
-            printf("Server: read error or empty request.\n");
-            free(http_request_msg);
-            close(client_fd);
-            continue;
-        }
-
-        //http_request_msg[bytes_read] = '\0';
-
         request_t * request = malloc(sizeof(request_t));
         request->client = client;
         request->fd_client = client_fd;
-        request->msg = http_request_msg;
 
         threadpool_create_work(threadpool, request, process_request);
     }
@@ -84,13 +62,37 @@ int main()
     return 0;
 }
 
-void* process_request(void* rq) {
+void* process_request(void* rq)
+{
     request_t* request = (request_t*)rq;
+
+    request->msg = (char*)malloc(sizeof(char) * BUFFER_SIZE);
+    if (!request->msg) {
+        close(request->fd_client);
+        free(request);
+        return NULL;
+    }
+
+    ssize_t bytes_read = read(request->fd_client, request->msg, BUFFER_SIZE - 1);
+    if (bytes_read <= 0)
+    {
+       printf("Server: read error or empty request.\n");
+       close(request->fd_client);
+       free(request->msg);
+       free(request);
+       return NULL;
+    }
+    request->msg[bytes_read] = '\0';
+
     HttpRequest *parsed_http = http_parse_request(request->msg, BUFFER_SIZE);        
-    
     if (parsed_http == NULL) {
         printf("ERROR: http request was not parsed\n");
-        goto cleanup_wrapper; 
+        close(request->fd_client);
+        free(parsed_http);
+
+        free(request->msg);
+        free(request);
+        return NULL;
     } 
 
     printf("PATH:'%s' + METHOD:%s\n", parsed_http->path, parsed_http->method);
@@ -102,7 +104,6 @@ void* process_request(void* rq) {
 
 cleanup_wrapper:
     printf("Server: closing connection %s:%d\n", inet_ntoa(request->client.sin_addr), ntohs(request->client.sin_port));
-    
     close(request->fd_client);
     free(request->msg);
     free(request);
