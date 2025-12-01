@@ -66,6 +66,7 @@ void http_send_file(HttpRequest *request, int client_fd, char *filepath) {
             "HTTP/1.1 %d %s\r\n"
             "Content-Type: text/html\r\n"
             "Content-Length: %zu\r\n"
+            "Connection: close\r\n"
             "\r\n",request->status, status, file_stat.st_size);
 
         if (send(client_fd, header, header_len, 0) < 0) {
