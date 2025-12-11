@@ -33,16 +33,24 @@ void* process_request(void* rq);
 
 int main()
 {
-    struct sockaddr_in *server_socket = sockaddr_server_constructor(PORT);
-    int server_fd = initialize_server(server_socket);
+    struct sockaddr_in server_socket = {0};
+    sockaddr_server_constructor(&server_socket, PORT);
+    int server_fd = initialize_server(&server_socket);
+
+    if (server_fd == SOCKET_NOT_CREATED)
+    {
+        printf("Server: socket was not opened\n");
+        return 1;
+    }
+
     threadpool_t * threadpool = threadpool_init(THREADS_AMOUNT);
     printf("Server: Listening on port: %d\n", PORT);
 
     while (1)
     {
-        struct sockaddr_in client;
-        socklen_t lenght = sizeof(client);
-        int client_fd = accept(server_fd, (struct sockaddr *)&client, &lenght);
+        struct sockaddr_in client = {0};
+        socklen_t client_socket_size = sizeof(client);
+        int client_fd = accept(server_fd, (struct sockaddr *)&client, &client_socket_size);
 
         if (client_fd < 0)
         {
@@ -65,8 +73,8 @@ int main()
 void* process_request(void* rq)
 {
     request_t* request = (request_t*)rq;
-
     request->msg = (char*)malloc(sizeof(char) * BUFFER_SIZE);
+
     if (!request->msg) {
         close(request->fd_client);
         free(request);
