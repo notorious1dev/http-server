@@ -22,14 +22,15 @@
 #define REQUEST_FILE_BUFFER 1024
 #define PAGES_DIR "./pages"
 
-typedef struct request_t {
+typedef struct connection_t {
     struct sockaddr_in client;
     int fd_client;
     char *msg;
-} request_t;
+} connection_t;
 
-void handle_file_send(HttpRequest *request, int client_fd);
-void* process_request(void* rq);
+void static_file_send(http_request_t*, int);
+void* process_connection(void*);
+void close_connection(connection_t*);
 
 int main()
 {
@@ -59,68 +60,63 @@ int main()
         }
         printf("Server: new connection from: %s:%d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
-        request_t * request = malloc(sizeof(request_t));
+        connection_t * request = malloc(sizeof(connection_t));
         request->client = client;
         request->fd_client = client_fd;
 
-        threadpool_create_work(threadpool, request, process_request);
+        threadpool_create_work(threadpool, request, process_connection);
     }
 
     close(server_fd);
     return 0;
 }
 
-void* process_request(void* rq)
+void* process_connection(void* _connection)
 {
-    request_t* request = (request_t*)rq;
-    request->msg = (char*)malloc(sizeof(char) * BUFFER_SIZE);
+    connection_t* connection = (connection_t*)_connection;
+    connection->msg = (char*)malloc(BUFFER_SIZE);
 
-    if (!request->msg) {
-        close(request->fd_client);
-        free(request);
+    if (!connection->msg) {
+        close(connection->fd_client);
+        free(connection);
         return NULL;
     }
 
-    ssize_t bytes_read = read(request->fd_client, request->msg, BUFFER_SIZE - 1);
+    ssize_t bytes_read = read(connection->fd_client, connection->msg, BUFFER_SIZE - 1);
     if (bytes_read <= 0)
     {
        printf("Server: read error or empty request.\n");
-       close(request->fd_client);
-       free(request->msg);
-       free(request);
+       close_connection(connection);
        return NULL;
     }
-    request->msg[bytes_read] = '\0';
+    connection->msg[bytes_read] = '\0';
 
-    HttpRequest *parsed_http = http_parse_request(request->msg, BUFFER_SIZE);        
-    if (parsed_http == NULL) {
+    http_request_t parsed_http = {0};      
+    if (http_parse_request(&parsed_http, connection->msg, bytes_read) != PARSE_SUCCESS) {
         printf("ERROR: http request was not parsed\n");
-        close(request->fd_client);
-        free(parsed_http);
-
-        free(request->msg);
-        free(request);
+        close_connection(connection);
         return NULL;
     } 
 
-    printf("PATH:'%s' + METHOD:%s\n", parsed_http->path, parsed_http->method);
-    handle_file_send(parsed_http, request->fd_client);
+    printf("PATH:'%s' + METHOD:%s\n", parsed_http.path, parsed_http.method);
+    static_file_send(&parsed_http, connection->fd_client);
 
-    free(parsed_http->method);
-    free(parsed_http->path);
-    free(parsed_http);
+    free(parsed_http.method);
+    free(parsed_http.path);
 
-cleanup_wrapper:
-    printf("Server: closing connection %s:%d\n", inet_ntoa(request->client.sin_addr), ntohs(request->client.sin_port));
-    close(request->fd_client);
-    free(request->msg);
-    free(request);
-    
+    printf("Server: closing connection %s:%d\n", inet_ntoa(connection->client.sin_addr), ntohs(connection->client.sin_port));
+    close_connection(connection);
     return NULL;
 }
 
+void close_connection(connection_t* connection) {
+    close (connection->fd_client);
+    free(connection->msg);
+    free(connection);
+}
+
 //----------FUNCTIONS IMPLEMENTATION-----------//
-void handle_file_send(HttpRequest *request, int client_fd)
+void static_file_send(http_request_t *request, int client_fd)
 {
     if (strcmp("GET", request->method) != 0) {
         request->status = NOT_IMPLEMENTED;

@@ -27,7 +27,7 @@ typedef struct threadjob_t {
 // CHANGED: Returns a pointer now
 threadpool_t* threadpool_init(int); 
 void threadpool_create_work(threadpool_t*, void*, void*(*fptr)(void*));
-void* _threadroutine(void*);
+static void* _threadroutine(void*);
 
 #ifndef THREADPOOL_T_IMPLEMENTATION_H
 #define THREADPOOL_T_IMPLEMENTATION_H
@@ -92,7 +92,7 @@ void threadpool_create_work(threadpool_t * threadpool, void * arg, void*(*_fptr)
     pthread_mutex_unlock(&threadpool->lock);
 }
 
-void* _threadroutine (void * arg) 
+static void* _threadroutine (void * arg) 
 {
     assert(arg != NULL);
 

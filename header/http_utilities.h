@@ -14,12 +14,15 @@ typedef struct {
     char *method;
     char *path;
 
-} HttpRequest;
+} http_request_t;
 
-//helping functions
-char *status_enum_to_string(HttpStatus status);
-static ssize_t find_char(char* buffer, ssize_t offset, ssize_t length, char c);
+typedef enum HTTP_PARSE_STATUS {
+    PARSE_ERROR,
+    PARSE_SUCCESS,
+} HTTP_PARSE_STATUS;
 
-HttpRequest *http_parse_request(char* buffer, size_t length);
+char *status_enum_to_string(HttpStatus);
+static ssize_t find_char(char*, ssize_t, ssize_t, char);
+int http_parse_request(http_request_t*, char*, size_t);
 
 #endif

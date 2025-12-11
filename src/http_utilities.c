@@ -5,24 +5,20 @@
 char * status_enum_to_string(HttpStatus status) {
     switch (status)
     {
-    case OK:
-        return "OK";
-    
-    case NOT_FOUND:
-        return "NOT FOUND";
-
-    case NOT_IMPLEMENTED:
-        return "NOT IMPLEMENTED";
+        case OK: return "OK";
+        case NOT_FOUND: return "NOT FOUND";
+        case NOT_IMPLEMENTED: return "NOT IMPLEMENTED";
+        default: return "NOT IMPLEMENTED";
     }
 }
 
 static ssize_t find_char(char* buffer, ssize_t offset, ssize_t length, char c)
 {
     if (buffer == NULL)
-        return (ssize_t)-1;
+        return -1;
 
     if (offset >= length || offset < 0)
-        return (ssize_t)-1;
+        return -1;
 
     for (ssize_t i = offset; i < length; i ++)
     {
@@ -30,39 +26,53 @@ static ssize_t find_char(char* buffer, ssize_t offset, ssize_t length, char c)
             return i;
     }
 
-    return (ssize_t) -1;
+    return -1;
 }
 
-HttpRequest* http_parse_request(char* buffer, size_t length) {
-    HttpRequest *request = malloc(sizeof(HttpRequest));
+int http_parse_request(http_request_t* request, char* buffer, size_t buffer_length) {
+    if (buffer == NULL || request == NULL || buffer_length == 0)
+        return PARSE_ERROR;
+
+    if (request == NULL)
+        return PARSE_ERROR;
 
     //parse method
-    size_t space_after_method = find_char(buffer, 0, length, ' '); //first space index after method
-    if (space_after_method == -1){
-        goto fail;
+    ssize_t method_end = find_char(buffer, 0, buffer_length, ' '); //first space index after method
+    if (method_end == -1){
+        return PARSE_ERROR;
     }
 
-    char *mt = malloc(space_after_method + 1); // +1 for \0
-    for (int i = 0; i < space_after_method ; i++) { mt[i] = buffer[i] ;}
-    mt[space_after_method] = '\0';
-    request->method = mt;
+    request->method = malloc(method_end + 1); // +1 for \0
+    if (request->method == NULL) {
+        return PARSE_ERROR;
+    }
+
+    for (int i = 0; i < method_end ; i++) 
+        request->method[i] = buffer[i];
+
+    request->method[method_end] = '\0';
 
     //parse path
-    size_t space_after_path = find_char(buffer, space_after_method + 1, length, ' ');
-    if (space_after_path == -1){
-        goto fail;
+    ssize_t path_end = find_char(buffer, method_end + 1, buffer_length, ' ');
+    if (path_end == -1){
+        free(request->method);
+        free(request);
+        return PARSE_ERROR;
     }
 
-    char *pt = malloc(space_after_path - space_after_method + 1);
-    for (int i = space_after_method + 1; i < space_after_path ; i++) { pt[i - (space_after_method + 1)] = buffer[i] ;}
-    pt[space_after_path - space_after_method - 1] = '\0';
-    request->path = pt;
+    request->path = malloc(path_end - method_end + 1);
+    if (request->path == NULL)
+    {
+        free(request->method);
+        free(request);
+        return PARSE_ERROR;
+    }
 
+    for (int i = method_end + 1; i < path_end ; i++) 
+        request->path[i - (method_end + 1)] = buffer[i];
+
+    request->path[path_end - method_end - 1] = '\0';
     request->status = OK;
-    return request;
 
-    fail:
-    free(mt);
-    free(pt);
-    return NULL;
+    return PARSE_SUCCESS;
 }

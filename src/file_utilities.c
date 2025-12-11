@@ -10,7 +10,7 @@
 #include "http_utilities.h"
 
 
-int find_file(HttpRequest *request, const char *dir_path, char *out_path, size_t out_size) {
+int find_file(http_request_t *request, const char *dir_path, char *out_path, size_t out_size) {
     DIR *dir = opendir(dir_path);
     if (!dir) {
         printf("Error: failed to open directory %s\n", dir_path);
@@ -47,7 +47,7 @@ int find_file(HttpRequest *request, const char *dir_path, char *out_path, size_t
     return 0;
 }
 
-void http_send_file(HttpRequest *request, int client_fd, char *filepath) {
+void http_send_file(http_request_t *request, int client_fd, char *filepath) {
         int fd = open(filepath, O_RDONLY);
         struct stat file_stat;
         if(fstat(fd, &file_stat) == -1) {
