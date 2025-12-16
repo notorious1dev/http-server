@@ -19,7 +19,6 @@
 #define IP "127.0.0.1"
 #define PORT 8080
 #define BUFFER_SIZE 1024
-#define REQUEST_FILE_BUFFER 1024
 #define PAGES_DIR "./pages"
 
 typedef struct connection_t {
@@ -63,7 +62,6 @@ int main()
         connection_t * request = malloc(sizeof(connection_t));
         request->client = client;
         request->fd_client = client_fd;
-
         threadpool_create_work(threadpool, request, process_connection);
     }
 
@@ -75,7 +73,6 @@ void* process_connection(void* _connection)
 {
     connection_t* connection = (connection_t*)_connection;
     connection->msg = (char*)malloc(BUFFER_SIZE);
-
     if (!connection->msg) {
         close(connection->fd_client);
         free(connection);
@@ -115,7 +112,6 @@ void close_connection(connection_t* connection) {
     free(connection);
 }
 
-//----------FUNCTIONS IMPLEMENTATION-----------//
 void static_file_send(http_request_t *request, int client_fd)
 {
     if (strcmp("GET", request->method) != 0) {
@@ -130,16 +126,23 @@ void static_file_send(http_request_t *request, int client_fd)
         return;
     }
 
-    char filepath[REQUEST_FILE_BUFFER] = {0};
-    int find_file_status = find_file(request, PAGES_DIR, filepath, REQUEST_FILE_BUFFER);
-    
-    if (find_file_status) 
+    size_t size_buffer = strlen(PAGES_DIR) + strlen(request->path) + 1;
+    char* buffer = (char*)malloc(size_buffer);
+    strcpy(buffer, PAGES_DIR);
+    strcat(buffer, request->path);
+    buffer[size_buffer] = '\0';
+
+    FILE* file = fopen(buffer, "r");
+
+    if (file != NULL)
     {
         request->status = OK;
-        http_send_file(request, client_fd, filepath);
+        http_send_file(request, client_fd, buffer);
+        free(buffer);
         return;
     }
 
     request->status = NOT_FOUND;
     http_send_file(request, client_fd, "./pages/404.html");
+    free(buffer);
 }
