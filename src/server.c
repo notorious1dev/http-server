@@ -128,10 +128,8 @@ void static_file_send(http_request_t *request, int client_fd)
 
     size_t size_buffer = strlen(PAGES_DIR) + strlen(request->path) + 1;
     char* buffer = (char*)malloc(size_buffer);
-    strcpy(buffer, PAGES_DIR);
-    strcat(buffer, request->path);
-    buffer[size_buffer] = '\0';
-
+    snprintf(buffer, size_buffer, "%s%s", PAGES_DIR, request->path);
+    
     FILE* file = fopen(buffer, "r");
 
     if (file != NULL)
