@@ -106,12 +106,6 @@ void* process_connection(void* _connection)
     return NULL;
 }
 
-void close_connection(connection_t* connection) {
-    close (connection->fd_client);
-    free(connection->msg);
-    free(connection);
-}
-
 void static_file_send(http_request_t *request, int client_fd)
 {
     if (strcmp("GET", request->method) != 0) {
@@ -122,25 +116,37 @@ void static_file_send(http_request_t *request, int client_fd)
 
     if (strcmp("/", request->path) == 0)
     {
+        request->status = OK;
         http_send_file(request, client_fd, "./pages/index.html");
         return;
     }
 
     size_t size_buffer = strlen(PAGES_DIR) + strlen(request->path) + 1;
-    char* buffer = (char*)malloc(size_buffer);
-    snprintf(buffer, size_buffer, "%s%s", PAGES_DIR, request->path);
-    
-    FILE* file = fopen(buffer, "r");
+    char* file_path = (char*)malloc(size_buffer);
 
-    if (file != NULL)
+    if (file_path == NULL) {
+        request->status = NOT_FOUND;
+        http_send_file(request, client_fd, "./pages/404.html");
+        return;
+    }
+    snprintf(file_path, size_buffer, "%s%s", PAGES_DIR, request->path);
+    
+    //If can't access the file
+    if (access(file_path, F_OK | R_OK))
     {
-        request->status = OK;
-        http_send_file(request, client_fd, buffer);
-        free(buffer);
+        request->status = NOT_FOUND;
+        http_send_file(request, client_fd, "./pages/404.html");
+        free(file_path);
         return;
     }
 
-    request->status = NOT_FOUND;
-    http_send_file(request, client_fd, "./pages/404.html");
-    free(buffer);
+    request->status = OK;
+    http_send_file(request, client_fd, file_path);
+    free(file_path);
+}
+
+void close_connection(connection_t* connection) {
+    close (connection->fd_client);
+    free(connection->msg);
+    free(connection);
 }
